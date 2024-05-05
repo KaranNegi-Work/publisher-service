@@ -14,7 +14,9 @@ const config = require("../../configs/config");
 class Producer{
     channel;
     async createChannel(){
+      // connect to rabbitmq server 
         const connection = await amqp.connect(config.rabbitMQ.url);
+        // create a channel on that connection
         this.channel = await connection.createChannel();
     }
 
@@ -24,19 +26,23 @@ class Producer{
     }
 
     async publishMessage(routingKey, message){
+      //checking if channel exist or not 
+      //if already existing then we will not create channel again and again
          if(!this.channel){
            await this.createChannel()
          }
          const exchangeName = config.rabbitMQ.exchangeName;
+        //  create exchange
          await this.channel.assertExchange(exchangeName, "direct");
 
          const transectionDetails = {
             logType: routingKey,
             message: message
          }
+        //  publish the message to exchange with routing key
          await this.channel.publish(exchangeName, routingKey, Buffer.from(JSON.stringify(transectionDetails)));
 
-         console.log(`the Message ${message} is set to exchange ${exchangeName}.`)
+         console.log(`The Message ${message} is sent to exchange ${exchangeName}.`)
 
     }
 }
